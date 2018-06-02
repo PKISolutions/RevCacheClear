@@ -1,4 +1,11 @@
-function Convert-RegistryDateToDatetime([byte[]]$b) {
+<#
+ * Project: RevCacheClear
+ * Registry Datetime helper functions
+ * (C) 2018 by PKI Solutions 
+ * Author: (gsamuelhays@gmail.com)
+ * Released under the GPLv3
+ #>
+function Convert-RegistryDateToDatetime([byte[]]$regDateBytes) {
 <#
     .SYNOPSIS 
     Converts REG_BINARY dates to a DateTime object.
@@ -6,6 +13,8 @@ function Convert-RegistryDateToDatetime([byte[]]$b) {
     .DESCRIPTION 
     Some tools and services store DateTime objects in a binary format in the
     registry. This function converts those back to a datetime object.
+
+    Returns DateTime if one is found, False if unable to convert.
 
     .PARAMETER bytes
     The byte array (byte[]) read in from the registry.
@@ -23,20 +32,29 @@ function Convert-RegistryDateToDatetime([byte[]]$b) {
     http://sams.site/blog/2018/05/13/Dealing-with-Reg_Binary-Dates-in-Powershell.html
 
 #>
-    # take our date and convert to a datetime format.
-    [long]$f = ([long]$b[7] -shl 56) `
-                -bor ([long]$b[6] -shl 48) `
-                -bor ([long]$b[5] -shl 40) `
-                -bor ([long]$b[4] -shl 32) `
-                -bor ([long]$b[3] -shl 24) `
-                -bor ([long]$b[2] -shl 16) `
-                -bor ([long]$b[1] -shl 8) `
-                -bor [long]$b[0]
 
-    return [datetime]::FromFileTime($f)
+    if ($null -eq $regDateBytes -or $regDateBytes.Count -lt 8) {
+        return $False
+    }
+
+    try  {
+        # take our date and convert to a datetime format.
+        [long]$f = ([long]$regDateBytes[7] -shl 56) `
+                    -bor ([long]$regDateBytes[6] -shl 48) `
+                    -bor ([long]$regDateBytes[5] -shl 40) `
+                    -bor ([long]$regDateBytes[4] -shl 32) `
+                    -bor ([long]$regDateBytes[3] -shl 24) `
+                    -bor ([long]$regDateBytes[2] -shl 16) `
+                    -bor ([long]$regDateBytes[1] -shl 8) `
+                    -bor [long]$regDateBytes[0]
+
+        return [datetime]::FromFileTime($f)
+    } catch [Exception] {
+        return $False
+    }
 }
 
-function Convert-DatetimeToRegistryDate($dt) {
+function Convert-DatetimeToRegistryDate($datetime) {
     <#
         .SYNOPSIS
         Converts a DateTime object to a REG_BINARY array suitable for some needs.
@@ -58,10 +76,10 @@ function Convert-DatetimeToRegistryDate($dt) {
         .LINK
         http://sams.site/blog/2018/05/13/Dealing-with-Reg_Binary-Dates-in-Powershell.html
     #>
-    [long]$ft = $dt.toFileTime()
+    [long]$ft = $datetime.toFileTime()
     $arr = @()
     0..7 | ForEach-Object {
         $arr += ([byte](($ft -shr (8 * $_)) -band 0xFF))
     }
-    return $arr
+    return [byte[]]$arr
 }
