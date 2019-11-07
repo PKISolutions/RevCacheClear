@@ -1,8 +1,9 @@
 <#
  * Project: RevCacheClear
  * CRLRevocationDate setter and getter
- * (C) 2019 by PKI Solutions 
- * Author: Vadims Podans
+ * (C) 2018-2019 by PKI Solutions 
+ * Author: @gsamuelhayes
+ * Contributors: Vadims Podans
  * Released under the GPLv3
  #>
 
